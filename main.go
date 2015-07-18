@@ -5,7 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/rihihr/filesign/v"
 	"io/ioutil"
 	"log"
 	"os"
@@ -13,9 +12,7 @@ import (
 	"unicode/utf8"
 )
 
-const (
-	NEWLINE = "\r\n"
-)
+const NEWLINE = "\r\n"
 
 func IsErr(err error) bool {
 	if err != nil {
@@ -49,7 +46,7 @@ func ReadSignFile(di *map[string][]string) error {
 	if err != nil {
 		return err
 	}
-	dat := strings.Split(string(fi), v.NEWLINE)
+	dat := strings.Split(string(fi), NEWLINE)
 	var key []string
 	var flag int = 0
 	for _, i := range dat {
