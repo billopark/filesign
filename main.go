@@ -3,11 +3,18 @@ package main
 import (
 	"encoding/hex"
 	"errors"
+	"flag"
 	"fmt"
+	"github.com/rihihr/filesign/v"
 	"io/ioutil"
 	"log"
 	"os"
 	"strings"
+	"unicode/utf8"
+)
+
+const (
+	NEWLINE = "\r\n"
 )
 
 func IsErr(err error) bool {
@@ -42,7 +49,7 @@ func ReadSignFile(di *map[string][]string) error {
 	if err != nil {
 		return err
 	}
-	dat := strings.Split(string(fi), "\n")
+	dat := strings.Split(string(fi), v.NEWLINE)
 	var key []string
 	var flag int = 0
 	for _, i := range dat {
@@ -70,16 +77,43 @@ func ReadSignFile(di *map[string][]string) error {
 	}
 	return nil
 }
-func main() {
-	var dic = make(map[string][]string)
-	err := ReadSignFile(&dic)
-	IsErr(err)
-	s, _ := ReadFile("filesign.exe")
+
+func FindExt(di *map[string][]string, hexData string) string {
+	dic := *di
 	for ext, binL := range dic {
 		for _, bin := range binL {
-			if strings.EqualFold(bin, s[:len(bin)]) {
-				fmt.Printf("%s", ext)
+			temp := bin
+			for strings.IndexRune(temp, 'n') != -1 {
+				i := strings.IndexRune(temp, 'n')
+				temp = strings.Join([]string{temp[:i], string(hexData[i]), temp[i+1:]}, "")
+			}
+			if strings.EqualFold(hexData[:utf8.RuneCountInString(temp)], temp) {
+				return ext
 			}
 		}
 	}
+	return ""
+}
+
+func main() {
+	filePtr := flag.String("u", "", "file address")
+	flag.StringVar(filePtr, "U", "", "file address")
+	flag.Parse()
+
+	for *filePtr == "" {
+		fmt.Printf("Input file address:")
+		fmt.Scanf("%s\n", filePtr)
+	}
+	var dic = make(map[string][]string)
+	err := ReadSignFile(&dic)
+
+	IsErr(err)
+	s, _ := ReadFile(*filePtr)
+	ext := FindExt(&dic, s)
+	if ext == "" {
+		fmt.Printf("No matching Extension")
+		os.Exit(1)
+	}
+
+	fmt.Printf("%s", ext)
 }
